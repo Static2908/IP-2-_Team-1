@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Entry</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Skill Entry Form</h1>
+        <form id="skillForm">
+            <div class="form-group">
+                <label for="skillName">Skill Name:</label>
+                <select id="skillName" name="skillName" required>
+                    <option value="">Select a Skill</option>
+                    <option value="Java">Java</option>
+                    <option value="Python">Python</option>
+                    <option value="Web Development">Web Development</option>
+                    <option value="Database Design">Database Design</option>
+                    <option value="Data Structures">Data Structures</option>
+                    <option value="Machine Learning">Machine Learning</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="proficiencyLevel">Proficiency Level (1-5):</label>
+                <div class="proficiency-scale">
+                    <input type="radio" id="level1" name="proficiencyLevel" value="1" required>
+                    <label for="level1">1 - Beginner</label>
+                    <input type="radio" id="level2" name="proficiencyLevel" value="2">
+                    <label for="level2">2 - Basic</label>
+                    <input type="radio" id="level3" name="proficiencyLevel" value="3">
+                    <label for="level3">3 - Intermediate</label>
+                    <input type="radio" id="level4" name="proficiencyLevel" value="4">
+                    <label for="level4">4 - Advanced</label>
+                    <input type="radio" id="level5" name="proficiencyLevel" value="5">
+                    <label for="level5">5 - Expert</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="experience">Years of Experience:</label>
+                <input type="number" id="experience" name="experience" min="0" max="50" required>
+            </div>
+
+            <button type="submit" class="btn btn-success">Add Skill</button>
+        </form>
+
+        <div id="skillsList" class="skills-list">
+            <h2>Your Skills</h2>
+            <ul id="skillsTable"></ul>
+        </div>
+
+        <a href="dashboard.html" class="btn btn-primary">Go to Dashboard</a>
+    </div>
+    <script src="js/validation.js"></script>
+    <script src="js/skillMapping.js"></script>
+</body>
+</html>

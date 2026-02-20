@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assessment Quiz</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Assessment Quiz</h1>
+        
+        <div id="quizContainer" class="quiz-container">
+            <div class="quiz-header">
+                <h2 id="skillName"></h2>
+                <div class="progress">
+                    <div id="progressBar" class="progress-bar"></div>
+                </div>
+                <p id="questionCounter"></p>
+            </div>
+
+            <form id="quizForm">
+                <div id="questionDiv" class="question-section">
+                    <!-- Questions will be loaded here -->
+                </div>
+                <button type="button" id="prevBtn" class="btn btn-secondary">Previous</button>
+                <button type="button" id="nextBtn" class="btn btn-primary">Next</button>
+                <button type="submit" id="submitBtn" class="btn btn-success" style="display:none;">Submit Quiz</button>
+            </form>
+        </div>
+
+        <div id="resultDiv" style="display:none;" class="result-section">
+            <h2>Quiz Result</h2>
+            <p id="resultText"></p>
+            <p id="scoreText"></p>
+            <a href="dashboard.html" class="btn btn-primary">Back to Dashboard</a>
+        </div>
+    </div>
+    <script src="js/assessment.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+# Compiled Java classes
+*.class
+bin/
+build/
+dist/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Maven
+target/
+*.jar
+*.war
+
+# Database
+*.sql.log
+*.db
+
+# Environment variables
+.env
+.env.local
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build artifacts
+*.o
+*.so
+*.dylib
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+temp/
