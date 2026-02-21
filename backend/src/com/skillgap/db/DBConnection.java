@@ -6,8 +6,7 @@ import java.sql.SQLException;
 
 public class DBConnection {
 
-    private static final String URL =
-        "jdbc:oracle:thin:@localhost:1521:XEPDB1";
+    private static final String URL = "jdbc:oracle:thin:@//localhost:1521/XEPDB1";
     private static final String USER = "amith";
     private static final String PASSWORD = "123456789";
 
@@ -20,7 +19,7 @@ public class DBConnection {
         }
     }
 
-    // 🔥 IMPORTANT: create NEW connection every time
+    // IMPORTANT: create NEW connection every time
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);
     }
