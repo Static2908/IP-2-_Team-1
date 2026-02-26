@@ -75,24 +75,29 @@ public class RegisterStudentServlet extends HttpServlet {
             String passwordHash = PasswordHash.hashPassword(password);
 
             // Store user and student data in database within transaction
-            try (Connection con = com.skillgap.db.DBConnection.getConnection()) {
+            Connection con = null;
+            try {
+                con = com.skillgap.db.DBConnection.getConnection();
                 con.setAutoCommit(false);
 
                 String insertUserSql = "INSERT INTO users (user_id, username, password_hash, email) " +
                         "VALUES (seq_users.NEXTVAL, ?, ?, ?)";
-                int generatedUserId;
-
-                try (PreparedStatement psUser = con.prepareStatement(insertUserSql, new String[] { "user_id" })) {
+                try (PreparedStatement psUser = con.prepareStatement(insertUserSql)) {
                     psUser.setString(1, username);
                     psUser.setString(2, passwordHash);
                     psUser.setString(3, email);
-
                     psUser.executeUpdate();
-                    try (ResultSet rs = psUser.getGeneratedKeys()) {
+                }
+
+                // retrieve generated user_id via sequence currval
+                int generatedUserId;
+                try (PreparedStatement psCurr = con.prepareStatement(
+                        "SELECT seq_users.CURRVAL FROM dual")) {
+                    try (ResultSet rs = psCurr.executeQuery()) {
                         if (rs.next()) {
                             generatedUserId = rs.getInt(1);
                         } else {
-                            throw new SQLException("Failed to retrieve generated user_id");
+                            throw new SQLException("Failed to obtain user_id CURRVAL");
                         }
                     }
                 }
@@ -115,14 +120,23 @@ public class RegisterStudentServlet extends HttpServlet {
                 return;
             } catch (SQLException sqle) {
                 sqle.printStackTrace();
-                try {
-                    // rollback if there was a failure
-                    DBConnection.getConnection().rollback();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
+                if (con != null) {
+                    try {
+                        con.rollback();
+                    } catch (SQLException ex) {
+                        ex.printStackTrace();
+                    }
                 }
                 response.sendRedirect("studentForm.jsp?error=Database error occurred");
                 return;
+            } finally {
+                if (con != null) {
+                    try {
+                        con.close();
+                    } catch (SQLException ex) {
+                        // ignore
+                    }
+                }
             }
 
         } catch (NumberFormatException e) {

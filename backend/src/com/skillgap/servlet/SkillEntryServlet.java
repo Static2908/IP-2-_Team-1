@@ -49,7 +49,9 @@ public class SkillEntryServlet extends HttpServlet {
             }
 
             // perform database operations: fetch student_id then insert skill
-            try (Connection con = DBConnection.getConnection()) {
+            Connection con = null;
+            try {
+                con = DBConnection.getConnection();
                 con.setAutoCommit(false);
                 int studentId;
                 // fetch student_id from students table
@@ -74,15 +76,18 @@ public class SkillEntryServlet extends HttpServlet {
                             skillId = rs.getInt("skill_id");
                         } else {
                             String insertSkill = "INSERT INTO skills (skill_id, skill_name) VALUES (seq_skills.NEXTVAL, ?)";
-                            try (PreparedStatement psIns = con.prepareStatement(insertSkill,
-                                    new String[] { "skill_id" })) {
+                            try (PreparedStatement psIns = con.prepareStatement(insertSkill)) {
                                 psIns.setString(1, skillName);
                                 psIns.executeUpdate();
-                                try (ResultSet key = psIns.getGeneratedKeys()) {
-                                    if (key.next()) {
-                                        skillId = key.getInt(1);
+                            }
+                            // fetch currval for skill_id
+                            try (PreparedStatement psCurr = con
+                                    .prepareStatement("SELECT seq_skills.CURRVAL FROM dual")) {
+                                try (ResultSet rs2 = psCurr.executeQuery()) {
+                                    if (rs2.next()) {
+                                        skillId = rs2.getInt(1);
                                     } else {
-                                        throw new SQLException("Failed to insert skill");
+                                        throw new SQLException("Failed to obtain skill_id CURRVAL");
                                     }
                                 }
                             }
@@ -105,8 +110,22 @@ public class SkillEntryServlet extends HttpServlet {
                 return;
             } catch (SQLException sqle) {
                 sqle.printStackTrace();
+                if (con != null) {
+                    try {
+                        con.rollback();
+                    } catch (SQLException ex) {
+                        ex.printStackTrace();
+                    }
+                }
                 response.sendRedirect("skillEntry.jsp?error=Database error occurred");
                 return;
+            } finally {
+                if (con != null) {
+                    try {
+                        con.close();
+                    } catch (SQLException ex) {
+                    }
+                }
             }
 
         } catch (NumberFormatException e) {
