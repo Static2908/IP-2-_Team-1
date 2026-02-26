@@ -13,7 +13,7 @@
         // Check if user is logged in
         String username = (String) session.getAttribute("username");
         if (username == null) {
-            response.sendRedirect("login.html");
+            response.sendRedirect("login.jsp");
             return;
         }
     %>
@@ -31,6 +31,16 @@
     </nav>
 
     <div class="container">
+        <%
+            String msg = request.getParameter("message");
+            if (msg != null) {
+        %>
+            <div class="success"><%= msg %></div>
+        <%
+            }
+
+            Object gapObj = request.getAttribute("gapAnalysis");
+        %>
         <section id="profile" class="section">
             <h2>Student Profile</h2>
             <div class="profile-info">
@@ -46,12 +56,52 @@
 
         <section id="gaps" class="section">
             <h2>Skill Gaps Analysis</h2>
+            <%
+                if (gapObj != null) {
+                    if (gapObj instanceof java.util.List) {
+                        java.util.List list = (java.util.List) gapObj;
+                        if (!list.isEmpty()) {
+            %>
+            <table class="gap-table">
+                <tr><th>Skill</th><th>Current</th><th>Target</th><th>Gap</th><th>Date</th></tr>
+                <%
+                            for (Object o : list) {
+                                java.util.Map map = (java.util.Map) o;
+                %>
+                <tr>
+                    <td><%= map.get("skillName") %></td>
+                    <td><%= map.get("currentLevel") %></td>
+                    <td><%= map.get("targetLevel") %></td>
+                    <td><%= map.get("gapScore") %></td>
+                    <td><%= map.get("analysisDate") %></td>
+                </tr>
+                <%
+                            }
+                %>
+            </table>
+            <%
+                        } else {
+            %>
+            <p>No gap analyses recorded yet.</p>
+            <%
+                        }
+                    } else if (gapObj instanceof java.util.Map) {
+                        java.util.Map mapOnly = (java.util.Map) gapObj;
+                        out.println("Latest analysis: " + mapOnly.toString());
+                    } else {
+                        out.println(gapObj.toString());
+                    }
+                } else {
+            %>
             <p>Skill gap analysis will be displayed here...</p>
+            <%
+                }
+            %>
         </section>
 
         <div class="action-buttons">
-            <a href="skillEntry.html" class="btn btn-primary">Add Skills</a>
-            <a href="assessmentQuiz.html" class="btn btn-primary">Take Assessment</a>
+            <a href="skillEntry.jsp" class="btn btn-primary">Add Skills</a>
+            <a href="assessment.jsp" class="btn btn-primary">Take Assessment</a>
         </div>
     </div>
 </body>

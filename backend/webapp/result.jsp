@@ -12,7 +12,11 @@
         <%
             String resultMessage = (String) request.getAttribute("resultMessage");
             String resultType = (String) request.getAttribute("resultType"); // success or error
-            
+            String percParam = request.getParameter("percentage");
+            if (percParam != null) {
+                resultMessage = "Your score percentage: " + percParam + "%";
+                resultType = "success";
+            }
             if (resultMessage != null) {
         %>
             <div class="<%= "success".equals(resultType) ? "success" : "error" %>">

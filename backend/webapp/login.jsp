@@ -1,4 +1,10 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%
+if (session.getAttribute("username") != null) {
+    response.sendRedirect("dashboard.jsp");
+    return;
+}
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -35,7 +41,7 @@
                     <input type="password" id="password" name="password" required>
                 </div>
                 <button type="submit" class="btn btn-primary">Login</button>
-                <p class="register-link">Don't have an account? <a href="studentForm.html">Register here</a></p>
+                <p class="register-link">Don't have an account? <a href="studentForm.jsp">Register here</a></p>
             </form>
         </div>
     </div>
