@@ -76,6 +76,56 @@ public class SkillGapServlet extends HttpServlet {
 
             request.setAttribute("gapAnalysis", gapList);
 
+            // read the student's target job
+            String targetJob = null;
+            try (PreparedStatement psJob = con.prepareStatement(
+                    "SELECT target_job FROM students WHERE student_id = ?")) {
+                psJob.setInt(1, studentId);
+                try (ResultSet rsJob = psJob.executeQuery()) {
+                    if (rsJob.next()) {
+                        targetJob = rsJob.getString("target_job");
+                    }
+                }
+            }
+            request.setAttribute("targetJob", targetJob);
+
+            // simple rule-based job recommendations
+            List<String> jobRecs = new ArrayList<>();
+            if (targetJob != null && !targetJob.trim().isEmpty()) {
+                // build proficiency map
+                Map<String, Integer> profMap = new HashMap<>();
+                try (PreparedStatement psProf = con.prepareStatement(
+                        "SELECT s.skill_name, ss.proficiency_level " +
+                                "FROM student_skills ss " +
+                                "JOIN skills s ON ss.skill_id = s.skill_id " +
+                                "WHERE ss.student_id = ?")) {
+                    psProf.setInt(1, studentId);
+                    try (ResultSet rsProf = psProf.executeQuery()) {
+                        while (rsProf.next()) {
+                            profMap.put(rsProf.getString("skill_name").toLowerCase(),
+                                    rsProf.getInt("proficiency_level"));
+                        }
+                    }
+                }
+                List<String> required = new ArrayList<>();
+                String tj = targetJob.toLowerCase();
+                if (tj.contains("backend developer") || tj.contains("backend")) {
+                    required = Arrays.asList("java", "database design", "data structures");
+                } else if (tj.contains("frontend developer") || tj.contains("frontend")) {
+                    required = Arrays.asList("javascript", "html", "css");
+                } else if (tj.contains("data scientist")) {
+                    required = Arrays.asList("python", "machine learning", "statistics");
+                }
+                for (String skill : required) {
+                    int prof = profMap.getOrDefault(skill, 0);
+                    if (prof < 3) {
+                        jobRecs.add("For your target job as " + targetJob +
+                                ", consider improving your " + skill + " skills.");
+                    }
+                }
+            }
+            request.setAttribute("jobRecommendations", jobRecs);
+
         } catch (SQLException e) {
             e.printStackTrace();
             request.setAttribute("gapAnalysis", new ArrayList<>());

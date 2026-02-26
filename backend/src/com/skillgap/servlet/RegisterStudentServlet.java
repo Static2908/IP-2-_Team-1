@@ -30,6 +30,7 @@ public class RegisterStudentServlet extends HttpServlet {
         String department = request.getParameter("department");
         String semesterStr = request.getParameter("semester");
         String cgpaStr = request.getParameter("cgpa");
+        String targetJob = request.getParameter("targetJob");
 
         // Validate inputs
         if (!InputValidator.isValidName(firstName) || !InputValidator.isValidName(lastName)) {
@@ -71,6 +72,12 @@ public class RegisterStudentServlet extends HttpServlet {
                 return;
             }
 
+            // validate target job
+            if (targetJob == null || targetJob.trim().isEmpty()) {
+                response.sendRedirect("studentForm.jsp?error=Target job required");
+                return;
+            }
+
             // Hash password
             String passwordHash = PasswordHash.hashPassword(password);
 
@@ -102,9 +109,9 @@ public class RegisterStudentServlet extends HttpServlet {
                     }
                 }
 
-                String insertStudentSql = "INSERT INTO students (student_id, user_id, first_name, last_name, department, semester, cgpa) "
+                String insertStudentSql = "INSERT INTO students (student_id, user_id, first_name, last_name, department, semester, cgpa, target_job) "
                         +
-                        "VALUES (seq_students.NEXTVAL, ?, ?, ?, ?, ?, ?)";
+                        "VALUES (seq_students.NEXTVAL, ?, ?, ?, ?, ?, ?, ?)";
                 try (PreparedStatement psStu = con.prepareStatement(insertStudentSql)) {
                     psStu.setInt(1, generatedUserId);
                     psStu.setString(2, firstName);
@@ -112,6 +119,7 @@ public class RegisterStudentServlet extends HttpServlet {
                     psStu.setString(4, department);
                     psStu.setInt(5, semester);
                     psStu.setDouble(6, cgpa);
+                    psStu.setString(7, targetJob);
                     psStu.executeUpdate();
                 }
 
