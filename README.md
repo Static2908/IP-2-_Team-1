@@ -31,10 +31,10 @@ An intelligent skill gap analysis system that helps students and professionals i
 See the [deployment](deployment/) folder for detailed setup instructions.
 
 ## Contributors
-- Amith Koka 24EG105K04: Frontend Development
-- Sameena Tanwaz 24EG105K63: Database Design
-- B Sai charan 24EG105K10: Backend Development
-- B Rohith 24EG105K11: AI Engine & Recommendations
+- Amith Koka 24EG105K04: Frontend Development , Database Design, Backend Development, AI Engine & Recommendations
+- Sameena Tanwaz 24EG105K63:
+- B Sai charan 24EG105K10: 
+- B Rohith 24EG105K11: 
 
 ## License
 This project is developed for educational purposes.
