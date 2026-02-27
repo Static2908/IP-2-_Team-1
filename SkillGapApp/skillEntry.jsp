@@ -46,7 +46,7 @@
             </div>
             <button type="submit" class="btn btn-primary">Add Skill</button>
         </form>
-        <p><a href="dashboard.jsp">Back to Dashboard</a></p>
+        <p><a href="DashboardServlet">Back to Dashboard</a></p>
     </div>
 </body>
 </html>

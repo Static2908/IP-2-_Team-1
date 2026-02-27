@@ -7,6 +7,7 @@
     <title>Student Dashboard</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <%
@@ -46,13 +47,42 @@
             <div class="profile-info">
                 <p><strong>Username:</strong> <%= username %></p>
                 <p><strong>Login Time:</strong> <%= new java.util.Date() %></p>
+                <p><strong>Target Job:</strong> <%= request.getAttribute("targetJob") != null ? request.getAttribute("targetJob") : "Target job not set" %></p>
             </div>
         </section>
 
         <section id="skills" class="section">
             <h2>Your Skills</h2>
-            <p>Skills information will be loaded here...</p>
+            <%
+                java.util.List<java.util.Map<String, Object>> skills = 
+                    (java.util.List<java.util.Map<String, Object>>) request.getAttribute("skills");
+                if (skills != null && !skills.isEmpty()) {
+            %>
+            <div class="skills-list">
+                <ul>
+                    <% for (java.util.Map<String, Object> skill : skills) { %>
+                    <li><strong><%= skill.get("name") %></strong> - Level: <%= skill.get("level") %></li>
+                    <% } %>
+                </ul>
+            </div>
+            <% } else { %>
+            <p>No skills added yet. <a href="skillEntry.jsp">Add a skill</a> to get started.</p>
+            <% } %>
         </section>
+
+        <%
+            java.util.List<String> jRecs = (java.util.List<String>) request.getAttribute("jobRecommendations");
+            if (jRecs != null && !jRecs.isEmpty()) {
+        %>
+        <section id="job-recs" class="section">
+            <h2>Job-based Recommendations</h2>
+            <ul>
+                <% for (String rec : jRecs) { %>
+                <li><%= rec %></li>
+                <% } %>
+            </ul>
+        </section>
+        <% } %>
 
         <section id="gaps" class="section">
             <h2>Skill Gaps Analysis</h2>
@@ -104,5 +134,7 @@
             <a href="assessment.jsp" class="btn btn-primary">Take Assessment</a>
         </div>
     </div>
+    <script src="${pageContext.request.contextPath}/js/charts.js"></script>
+    <script src="${pageContext.request.contextPath}/js/skillMapping.js"></script>
 </body>
 </html>

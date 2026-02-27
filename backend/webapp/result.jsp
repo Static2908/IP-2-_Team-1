@@ -29,7 +29,7 @@
         <%
             }
         %>
-        <a href="dashboard.jsp" class="btn btn-primary">Back to Dashboard</a>
+        <a href="DashboardServlet" class="btn btn-primary">Back to Dashboard</a>
     </div>
 </body>
 </html>
