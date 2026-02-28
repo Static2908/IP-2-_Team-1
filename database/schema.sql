@@ -6,6 +6,10 @@ CREATE SEQUENCE seq_student_skills START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE seq_assessments START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE seq_assessment_results START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE seq_skill_gap_analysis START WITH 1 INCREMENT BY 1;
+
+-- sequence for MCQ questions
+CREATE SEQUENCE seq_questions START WITH 1 INCREMENT BY 1;
+
 CREATE SEQUENCE seq_recommendations START WITH 1 INCREMENT BY 1;
 
 -- Create Users table
@@ -46,6 +50,20 @@ CREATE TABLE student_skills (
     proficiency_level NUMBER CHECK (proficiency_level BETWEEN 1 AND 5),
     assessed_date DATE,
     FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE,
+    FOREIGN KEY (skill_id) REFERENCES skills(skill_id) ON DELETE CASCADE
+);
+
+-- Create Questions table for MCQ engine
+CREATE TABLE questions (
+    question_id NUMBER PRIMARY KEY,
+    skill_id NUMBER NOT NULL,
+    difficulty_level NUMBER CHECK (difficulty_level BETWEEN 1 AND 5),
+    question_text VARCHAR2(1000) NOT NULL,
+    option_a VARCHAR2(255) NOT NULL,
+    option_b VARCHAR2(255) NOT NULL,
+    option_c VARCHAR2(255) NOT NULL,
+    option_d VARCHAR2(255) NOT NULL,
+    correct_option CHAR(1) CHECK (correct_option IN ('A','B','C','D')),
     FOREIGN KEY (skill_id) REFERENCES skills(skill_id) ON DELETE CASCADE
 );
 

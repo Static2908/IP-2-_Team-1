@@ -1,25 +1,14 @@
 // Dashboard Charts Initialization
 
-// Sample data for charts
-const studentData = {
+// studentData may be injected by servlet; fallback placeholder
+const studentData = (typeof window !== 'undefined' && window.studentData) ? window.studentData : {
     name: 'John Doe',
     department: 'Computer Science',
     semester: 4,
     cgpa: 3.5,
-    skills: {
-        'Java': 4,
-        'Python': 2,
-        'Web Development': 4,
-        'Database': 3,
-        'Data Structures': 3,
-        'Machine Learning': 1
-    },
-    skillGaps: {
-        'Python': 2,
-        'Machine Learning': 3,
-        'Cloud Computing': 2.5,
-        'System Design': 2.0
-    }
+    skills: {},
+    targetLevels: {},
+    skillGaps: {}
 };
 
 // Initialize all charts when page loads
@@ -32,16 +21,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Load student profile information
 function loadProfileInfo() {
-    document.getElementById('studentName').textContent = studentData.name;
-    document.getElementById('studentDept').textContent = studentData.department;
-    document.getElementById('studentSem').textContent = studentData.semester;
-    document.getElementById('studentCGPA').textContent = studentData.cgpa.toFixed(2);
+    if (!studentData) return;
+    const nameEl = document.getElementById('studentName');
+    const deptEl = document.getElementById('studentDept');
+    const semEl = document.getElementById('studentSem');
+    const cgpaEl = document.getElementById('studentCGPA');
+    if (nameEl) nameEl.textContent = studentData.name || '';
+    if (deptEl) deptEl.textContent = studentData.department || '';
+    if (semEl) semEl.textContent = studentData.semester || '';
+    if (cgpaEl && studentData.cgpa != null) cgpaEl.textContent = studentData.cgpa.toFixed(2);
 }
 
 // Initialize Skills Radar/Bar Chart
 function initSkillsChart() {
     const ctx = document.getElementById('skillsChart');
-    if (!ctx) return;
+    if (!ctx || !studentData || !studentData.skills) return;
     
     const skillLabels = Object.keys(studentData.skills);
     const skillValues = Object.values(studentData.skills);
@@ -90,7 +84,7 @@ function initSkillsChart() {
 // Initialize Skill Gap Chart
 function initGapChart() {
     const ctx = document.getElementById('gapChart');
-    if (!ctx) return;
+    if (!ctx || !studentData || !studentData.skillGaps) return;
     
     const gapLabels = Object.keys(studentData.skillGaps);
     const gapValues = Object.values(studentData.skillGaps);

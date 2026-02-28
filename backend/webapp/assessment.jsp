@@ -30,21 +30,45 @@
         <%
             }
         %>
-        <form action="AssessmentServlet" method="post">
-            <div class="form-group">
-                <label for="assessmentId">Assessment ID:</label>
-                <input type="number" id="assessmentId" name="assessmentId" required>
+        <form action="AssessmentServlet" method="post" id="mcqForm">
+            <input type="hidden" name="skillId" value="<%= request.getAttribute("skillId") %>" />
+            <input type="hidden" name="assessmentId" value="<%= request.getAttribute("assessmentId") %>" />
+            <input type="hidden" id="completionTime" name="completionTime" value="0">
+
+            <div class="mcq-section">
+                <%
+                    java.util.List<java.util.Map<String,Object>> questions =
+                            (java.util.List<java.util.Map<String,Object>>) request.getAttribute("questions");
+                    if (questions != null && !questions.isEmpty()) {
+                        int qnum = 1;
+                        for (java.util.Map<String,Object> q : questions) {
+                            int qid = (Integer) q.get("questionId");
+                %>
+                <div class="question-block">
+                    <h3>Question <%= qnum++ %></h3>
+                    <p><%= q.get("questionText") %></p>
+                    <input type="hidden" name="questionIds" value="<%= qid %>" />
+                    <label><input type="radio" name="ans_<%= qid %>" value="A" required> <%= q.get("optionA") %></label><br>
+                    <label><input type="radio" name="ans_<%= qid %>" value="B"> <%= q.get("optionB") %></label><br>
+                    <label><input type="radio" name="ans_<%= qid %>" value="C"> <%= q.get("optionC") %></label><br>
+                    <label><input type="radio" name="ans_<%= qid %>" value="D"> <%= q.get("optionD") %></label><br>
+                </div>
+                <%      }
+                    } else {
+                %>
+                <p>No questions available for this skill.</p>
+                <% }
+                %>
             </div>
-            <div class="form-group">
-                <label for="score">Score:</label>
-                <input type="number" id="score" name="score" required>
-            </div>
-            <div class="form-group">
-                <label for="completionTime">Completion Time (seconds):</label>
-                <input type="number" id="completionTime" name="completionTime" required>
-            </div>
+
             <button type="submit" class="btn btn-primary">Submit</button>
         </form>
+        <script>
+            document.getElementById('mcqForm').addEventListener('submit', function(e) {
+
+                document.getElementById('completionTime').value = Math.floor(Math.random()*300);
+            });
+        </script>
         <p><a href="DashboardServlet">Back to Dashboard</a></p>
     </div>
 </body>

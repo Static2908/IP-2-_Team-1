@@ -41,10 +41,6 @@
                     <label for="password">Password:</label>
                     <input type="password" id="password" name="password" required>
                 </div>
-                <div class="form-group">
-                    <label for="targetJob">Target Job:</label>
-                    <input type="text" id="targetJob" name="targetJob" required>
-                </div>
             </fieldset>
 
             <fieldset>
@@ -64,7 +60,7 @@
                 </div>
                 <div class="form-group">
                     <label for="cgpa">CGPA:</label>
-                    <input type="number" id="cgpa" name="cgpa" min="0" max="4" step="0.01" required>
+                    <input type="number" id="cgpa" name="cgpa" min="0" max="10" step="0.01" required>
                 </div>
             </fieldset>
 

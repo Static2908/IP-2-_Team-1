@@ -126,12 +126,38 @@ public class SkillGapServlet extends HttpServlet {
             }
             request.setAttribute("jobRecommendations", jobRecs);
 
+            // if an assessment was just completed, expose the last gap information
+            Integer lastSkillId = (Integer) session.getAttribute("lastSkillId");
+            Integer lastClaimed = (Integer) session.getAttribute("lastClaimedLevel");
+            Integer lastActual = (Integer) session.getAttribute("lastActualLevel");
+            if (lastSkillId != null && lastClaimed != null && lastActual != null) {
+                double lastGap = lastActual - lastClaimed;
+                String lastSkillName = null;
+                try (PreparedStatement psName = con.prepareStatement(
+                        "SELECT skill_name FROM skills WHERE skill_id = ?")) {
+                    psName.setInt(1, lastSkillId);
+                    try (ResultSet rsName = psName.executeQuery()) {
+                        if (rsName.next()) {
+                            lastSkillName = rsName.getString("skill_name");
+                        }
+                    }
+                }
+                request.setAttribute("lastSkillName", lastSkillName);
+                request.setAttribute("lastClaimedLevel", lastClaimed);
+                request.setAttribute("lastActualLevel", lastActual);
+                request.setAttribute("lastGapScore", lastGap);
+                // clear to avoid showing repeatedly
+                session.removeAttribute("lastSkillId");
+                session.removeAttribute("lastClaimedLevel");
+                session.removeAttribute("lastActualLevel");
+            }
+
         } catch (SQLException e) {
             e.printStackTrace();
             request.setAttribute("gapAnalysis", new ArrayList<>());
         }
 
-        request.getRequestDispatcher("dashboard.jsp")
+        request.getRequestDispatcher("skillgap.jsp")
                 .forward(request, response);
     }
 

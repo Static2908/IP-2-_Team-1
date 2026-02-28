@@ -33,106 +33,56 @@
 
     <div class="container">
         <%
-            String msg = request.getParameter("message");
-            if (msg != null) {
+            // summary stats
+            Integer total = (Integer) request.getAttribute("totalSkills");
+            Double avg = (Double) request.getAttribute("avgProficiency");
         %>
-            <div class="success"><%= msg %></div>
-        <%
-            }
+        <script>
+            // data provided by DashboardServlet
+            var __skillJson = '<%= request.getAttribute("skillJson") %>';
+            var __targetJson = '<%= request.getAttribute("targetJson") %>';
+            var __gapJson = '<%= request.getAttribute("gapJson") %>';
+            try { __skillJson = JSON.parse(__skillJson); } catch(e){ __skillJson = {}; }
+            try { __targetJson = JSON.parse(__targetJson); } catch(e){ __targetJson = {}; }
+            try { __gapJson = JSON.parse(__gapJson); } catch(e){ __gapJson = {}; }
 
-            Object gapObj = request.getAttribute("gapAnalysis");
-        %>
-        <section id="profile" class="section">
-            <h2>Student Profile</h2>
+            window.studentData = {
+                name: "<%= username %>",
+                skills: __skillJson,
+                targetLevels: __targetJson,
+                skillGaps: __gapJson
+            };
+        </script>
+        <section class="section">
+            <h2>Overview</h2>
             <div class="profile-info">
                 <p><strong>Username:</strong> <%= username %></p>
                 <p><strong>Login Time:</strong> <%= new java.util.Date() %></p>
                 <p><strong>Target Job:</strong> <%= request.getAttribute("targetJob") != null ? request.getAttribute("targetJob") : "Target job not set" %></p>
+                <p><strong>Total Skills:</strong> <%= total != null ? total : 0 %></p>
+                <p><strong>Average Proficiency:</strong> <%= avg != null ? String.format("%.2f", avg) : "N/A" %></p>
             </div>
-        </section>
-
-        <section id="skills" class="section">
-            <h2>Your Skills</h2>
-            <%
-                java.util.List<java.util.Map<String, Object>> skills = 
-                    (java.util.List<java.util.Map<String, Object>>) request.getAttribute("skills");
-                if (skills != null && !skills.isEmpty()) {
-            %>
-            <div class="skills-list">
-                <ul>
-                    <% for (java.util.Map<String, Object> skill : skills) { %>
-                    <li><strong><%= skill.get("name") %></strong> - Level: <%= skill.get("level") %></li>
-                    <% } %>
-                </ul>
-            </div>
-            <% } else { %>
-            <p>No skills added yet. <a href="skillEntry.jsp">Add a skill</a> to get started.</p>
-            <% } %>
-        </section>
-
-        <%
-            java.util.List<String> jRecs = (java.util.List<String>) request.getAttribute("jobRecommendations");
-            if (jRecs != null && !jRecs.isEmpty()) {
-        %>
-        <section id="job-recs" class="section">
-            <h2>Job-based Recommendations</h2>
-            <ul>
-                <% for (String rec : jRecs) { %>
-                <li><%= rec %></li>
-                <% } %>
-            </ul>
-        </section>
-        <% } %>
-
-        <section id="gaps" class="section">
-            <h2>Skill Gaps Analysis</h2>
-            <%
-                if (gapObj != null) {
-                    if (gapObj instanceof java.util.List) {
-                        java.util.List list = (java.util.List) gapObj;
-                        if (!list.isEmpty()) {
-            %>
-            <table class="gap-table">
-                <tr><th>Skill</th><th>Current</th><th>Target</th><th>Gap</th><th>Date</th></tr>
-                <%
-                            for (Object o : list) {
-                                java.util.Map map = (java.util.Map) o;
-                %>
-                <tr>
-                    <td><%= map.get("skillName") %></td>
-                    <td><%= map.get("currentLevel") %></td>
-                    <td><%= map.get("targetLevel") %></td>
-                    <td><%= map.get("gapScore") %></td>
-                    <td><%= map.get("analysisDate") %></td>
-                </tr>
-                <%
-                            }
-                %>
-            </table>
-            <%
-                        } else {
-            %>
-            <p>No gap analyses recorded yet.</p>
-            <%
-                        }
-                    } else if (gapObj instanceof java.util.Map) {
-                        java.util.Map mapOnly = (java.util.Map) gapObj;
-                        out.println("Latest analysis: " + mapOnly.toString());
-                    } else {
-                        out.println(gapObj.toString());
-                    }
-                } else {
-            %>
-            <p>Skill gap analysis will be displayed here...</p>
-            <%
-                }
-            %>
         </section>
 
         <div class="action-buttons">
-            <a href="skillEntry.jsp" class="btn btn-primary">Add Skills</a>
-            <a href="assessment.jsp" class="btn btn-primary">Take Assessment</a>
+            <a href="SkillsServlet" class="btn btn-primary">Manage Skills</a>
+            <a href="AssessmentServlet" class="btn btn-primary">Take Assessment</a>
+            <a href="SkillGapServlet" class="btn btn-primary">View Skill Gap</a>
         </div>
+
+        <section class="section charts-section">
+            <h2>Visual Overview</h2>
+            <div class="charts-container">
+                <div class="chart-box">
+                    <h3>Skill Proficiency</h3>
+                    <canvas id="skillsChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h3>Skill Gaps</h3>
+                    <canvas id="gapChart"></canvas>
+                </div>
+            </div>
+        </section>
     </div>
     <script src="${pageContext.request.contextPath}/js/charts.js"></script>
     <script src="${pageContext.request.contextPath}/js/skillMapping.js"></script>

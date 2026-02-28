@@ -79,6 +79,26 @@ canvas {
     margin-bottom: 20px;
 }
 
+.charts-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    justify-content: center;
+}
+
+.chart-box {
+    flex: 1 1 300px;
+    padding: 10px;
+    background: #f7fafc;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.chart-box h3 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
 /* Skills List */
 .skills-list {
     background-color: #f7fafc;
@@ -198,14 +218,28 @@ canvas {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .navbar .nav-menu {
+    .nav-container {
         flex-direction: column;
-        gap: 15px;
+        gap: 20px;
     }
+
+    .nav-menu {
+        flex-direction: column;
+        gap: 10px;
+    }
+
     .profile-info {
         grid-template-columns: 1fr;
     }
-    .skills-list,
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .action-buttons .btn {
+        max-width: 100%;
+    }
+
     .recommendations-list {
         grid-template-columns: 1fr;
     }

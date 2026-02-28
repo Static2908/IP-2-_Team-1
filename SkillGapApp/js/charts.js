@@ -1,63 +1,191 @@
-// Bar, pie, radar chart scripts (frontend/js/charts.js)
+// Dashboard Charts Initialization
 
-function generateBarChart(ctx, labels, data) {
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Skill Level',
-                data: data,
-                backgroundColor: 'rgba(102, 126, 234, 0.6)',
-                borderColor: 'rgba(102, 126, 234, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: { beginAtZero: true }
-            }
-        }
-    });
+// studentData may be injected by servlet; fallback placeholder
+const studentData = (typeof window !== 'undefined' && window.studentData) ? window.studentData : {
+    name: 'John Doe',
+    department: 'Computer Science',
+    semester: 4,
+    cgpa: 3.5,
+    skills: {},
+    targetLevels: {},
+    skillGaps: {}
+};
+
+// Initialize all charts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadProfileInfo();
+    initSkillsChart();
+    initGapChart();
+    loadRecommendations();
+});
+
+// Load student profile information
+function loadProfileInfo() {
+    if (!studentData) return;
+    const nameEl = document.getElementById('studentName');
+    const deptEl = document.getElementById('studentDept');
+    const semEl = document.getElementById('studentSem');
+    const cgpaEl = document.getElementById('studentCGPA');
+    if (nameEl) nameEl.textContent = studentData.name || '';
+    if (deptEl) deptEl.textContent = studentData.department || '';
+    if (semEl) semEl.textContent = studentData.semester || '';
+    if (cgpaEl && studentData.cgpa != null) cgpaEl.textContent = studentData.cgpa.toFixed(2);
 }
 
-function generatePieChart(ctx, labels, data) {
-    new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: [
-                    'rgba(102, 126, 234, 0.6)',
-                    'rgba(201, 213, 224, 0.6)',
-                    'rgba(118, 75, 162, 0.6)'
-                ],
-                borderWidth: 1
-            }]
-        }
-    });
-}
-
-function generateRadarChart(ctx, labels, data) {
+// Initialize Skills Radar/Bar Chart
+function initSkillsChart() {
+    const ctx = document.getElementById('skillsChart');
+    if (!ctx || !studentData || !studentData.skills) return;
+    
+    const skillLabels = Object.keys(studentData.skills);
+    const skillValues = Object.values(studentData.skills);
+    
     new Chart(ctx, {
         type: 'radar',
         data: {
-            labels: labels,
+            labels: skillLabels,
             datasets: [{
-                label: 'Skill Profile',
-                data: data,
-                backgroundColor: 'rgba(102, 126, 234, 0.4)',
-                borderColor: 'rgba(102, 126, 234, 1)',
-                pointBackgroundColor: 'rgba(201, 213, 224, 0.6)'
+                label: 'Your Proficiency Levels',
+                data: skillValues,
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                borderWidth: 2,
+                pointRadius: 5,
+                pointBackgroundColor: '#667eea',
+                pointHoverBackgroundColor: '#764ba2'
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: true,
             scales: {
-                r: { beginAtZero: true }
+                r: {
+                    beginAtZero: true,
+                    max: 5,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 12
+                        }
+                    }
+                }
             }
         }
     });
+}
+
+// Initialize Skill Gap Chart
+function initGapChart() {
+    const ctx = document.getElementById('gapChart');
+    if (!ctx || !studentData || !studentData.skillGaps) return;
+    
+    const gapLabels = Object.keys(studentData.skillGaps);
+    const gapValues = Object.values(studentData.skillGaps);
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: gapLabels,
+            datasets: [{
+                label: 'Skill Gap Score',
+                data: gapValues,
+                backgroundColor: [
+                    '#f56565',
+                    '#ed8936',
+                    '#ecc94b',
+                    '#48bb78'
+                ],
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            indexAxis: 'y',
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 5
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        font: {
+                            size: 12
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Load recommendations
+function loadRecommendations() {
+    const recommendations = [
+        {
+            skill: 'Python',
+            text: 'Focus on Python fundamentals and practice with data science libraries like NumPy and Pandas.',
+            priority: 'High'
+        },
+        {
+            skill: 'Machine Learning',
+            text: 'Take online courses in ML algorithms and work on real-world projects to gain practical experience.',
+            priority: 'High'
+        },
+        {
+            skill: 'Cloud Computing',
+            text: 'Learn AWS or Azure basics and work on cloud deployment projects.',
+            priority: 'Medium'
+        },
+        {
+            skill: 'System Design',
+            text: 'Study distributed systems concepts and practice system design problems.',
+            priority: 'Medium'
+        }
+    ];
+    
+    const recommendationsList = document.getElementById('recommendationsList');
+    if (recommendationsList) {
+        recommendationsList.innerHTML = recommendations.map(rec => `
+            <div class="recommendation-card">
+                <h3>${rec.skill}</h3>
+                <p>${rec.text}</p>
+                <span class="priority">Priority: ${rec.priority}</span>
+            </div>
+        `).join('');
+    }
+}
+
+// Utility function to update chart data dynamically
+function updateChart(chartId, newData) {
+    if (typeof Chart === 'undefined') return;
+    
+    const canvas = document.getElementById(chartId);
+    if (!canvas) return;
+    
+    const chartInstance = Chart.helpers.getChart(canvas);
+    if (chartInstance) {
+        chartInstance.data = newData;
+        chartInstance.update();
+    }
+}
+
+// Export functions for use in other modules
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        initSkillsChart,
+        initGapChart,
+        loadRecommendations,
+        updateChart
+    };
 }
