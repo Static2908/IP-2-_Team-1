@@ -62,6 +62,10 @@
                     <label for="cgpa">CGPA:</label>
                     <input type="number" id="cgpa" name="cgpa" min="0" max="10" step="0.01" required>
                 </div>
+                <div class="form-group">
+                    <label for="targetJob">Target Job:</label>
+                    <input type="text" id="targetJob" name="targetJob" class="form-control" required>
+                </div>
             </fieldset>
 
             <button type="submit" class="btn btn-success">Register</button>
