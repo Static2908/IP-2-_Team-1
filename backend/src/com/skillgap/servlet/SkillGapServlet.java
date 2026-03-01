@@ -74,28 +74,37 @@ public class SkillGapServlet extends HttpServlet {
             for (Map<String, Object> row : gapHistory) {
                 String skillName = (String) row.get("skillName");
                 if (!latestGapPerSkill.containsKey(skillName)) {
-                    // first appearance is the most recent due to DESC ordering
                     latestGapPerSkill.put(skillName, row);
                 }
             }
 
-            Set<String> recSet = new LinkedHashSet<>();
+            LinkedHashSet<String> jobRecSet = new LinkedHashSet<>();
+            LinkedHashSet<String> skillRecSet = new LinkedHashSet<>();
+
             for (Map<String, Object> row : latestGapPerSkill.values()) {
                 String skillName = (String) row.get("skillName");
                 int currentLvl = (int) row.get("currentLevel");
                 int targetLvl = (int) row.get("targetLevel");
                 double gapScore = (double) row.get("gapScore");
-                List<String> recs = com.skillgap.service.RecommendationEngine.generateRecommendations(
-                        skillName, currentLvl, targetLvl, gapScore, targetJob);
-                recSet.addAll(recs);
+
+                Map<String, List<String>> recBundle = com.skillgap.service.RecommendationEngine
+                        .generateRecommendations(skillName, currentLvl, targetLvl, gapScore, targetJob);
+                List<String> jobRecs = recBundle.get("jobRecommendations");
+                List<String> skillRecs = recBundle.get("skillRecommendations");
+                if (jobRecs != null)
+                    jobRecSet.addAll(jobRecs);
+                if (skillRecs != null)
+                    skillRecSet.addAll(skillRecs);
             }
-            List<String> recommendationList = new ArrayList<>(recSet);
-            request.setAttribute("recommendations", recommendationList);
+
+            request.setAttribute("jobRecommendations", new ArrayList<>(jobRecSet));
+            request.setAttribute("skillRecommendations", new ArrayList<>(skillRecSet));
 
         } catch (SQLException e) {
             e.printStackTrace();
             request.setAttribute("gapHistory", new ArrayList<>());
-            request.setAttribute("recommendations", new ArrayList<>());
+            request.setAttribute("jobRecommendations", new ArrayList<>());
+            request.setAttribute("skillRecommendations", new ArrayList<>());
         }
 
         request.getRequestDispatcher("skillgap.jsp").forward(request, response);

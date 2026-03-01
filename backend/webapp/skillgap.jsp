@@ -1,4 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -30,19 +31,23 @@
     <h1>Skill Gap Analysis</h1>
     <a href="DashboardServlet" class="btn btn-secondary">Back to Dashboard</a>
     
-    <h2>Recommendations Based on Target Job</h2>
-    <%
-        java.util.List<String> recommendations = (java.util.List<String>) request.getAttribute("recommendations");
-        if (recommendations != null && !recommendations.isEmpty()) {
-    %>
-    <ul>
-        <% for (String r : recommendations) { %>
-        <li><%= r %></li>
-        <% } %>
-    </ul>
-    <% } else { %>
-    <p>No specific recommendations at this time.</p>
-    <% } %>
+    <h3> Career Recommendations</h3>
+    <c:if test="${not empty jobRecommendations}">
+        <ul>
+            <c:forEach var="rec" items="${jobRecommendations}">
+                <li>${rec}</li>
+            </c:forEach>
+        </ul>
+    </c:if>
+
+    <h3> Skill Improvement Recommendations</h3>
+    <c:if test="${not empty skillRecommendations}">
+        <ul>
+            <c:forEach var="rec" items="${skillRecommendations}">
+                <li>${rec}</li>
+            </c:forEach>
+        </ul>
+    </c:if>
     
     <h2>Gap Records</h2>
     <%
