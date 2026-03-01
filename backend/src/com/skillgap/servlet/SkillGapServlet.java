@@ -69,11 +69,28 @@ public class SkillGapServlet extends HttpServlet {
             }
             request.setAttribute("gapHistory", gapHistory);
 
-            // PHASE 6: Generate recommendations - placeholder until RecommendationEngine is
-            // integrated
-            List<String> recommendations = new ArrayList<>();
-            // TODO: Integrate RecommendationEngine for intelligent recommendations
-            request.setAttribute("recommendations", recommendations);
+            // PHASE 6: Generate recommendations only from latest record per skill
+            Map<String, Map<String, Object>> latestGapPerSkill = new LinkedHashMap<>();
+            for (Map<String, Object> row : gapHistory) {
+                String skillName = (String) row.get("skillName");
+                if (!latestGapPerSkill.containsKey(skillName)) {
+                    // first appearance is the most recent due to DESC ordering
+                    latestGapPerSkill.put(skillName, row);
+                }
+            }
+
+            Set<String> recSet = new LinkedHashSet<>();
+            for (Map<String, Object> row : latestGapPerSkill.values()) {
+                String skillName = (String) row.get("skillName");
+                int currentLvl = (int) row.get("currentLevel");
+                int targetLvl = (int) row.get("targetLevel");
+                double gapScore = (double) row.get("gapScore");
+                List<String> recs = com.skillgap.service.RecommendationEngine.generateRecommendations(
+                        skillName, currentLvl, targetLvl, gapScore, targetJob);
+                recSet.addAll(recs);
+            }
+            List<String> recommendationList = new ArrayList<>(recSet);
+            request.setAttribute("recommendations", recommendationList);
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -156,8 +173,8 @@ public class SkillGapServlet extends HttpServlet {
 
                 // Insert into skill_gap_analysis
                 String insertSql = "INSERT INTO skill_gap_analysis " +
-                        "(analysis_id, student_id, skill_id, current_level, target_level, gap_score) " +
-                        "VALUES (seq_skill_gap_analysis.NEXTVAL, ?, ?, ?, ?, ?)";
+                        "(analysis_id, student_id, skill_id, current_level, target_level, gap_score, analysis_date) " +
+                        "VALUES (seq_skill_gap_analysis.NEXTVAL, ?, ?, ?, ?, ?, SYSTIMESTAMP)";
 
                 try (PreparedStatement psIns = con.prepareStatement(insertSql)) {
                     psIns.setInt(1, studentId);
