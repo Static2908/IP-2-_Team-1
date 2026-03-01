@@ -210,3 +210,58 @@ legend {
         margin-bottom: 10px;
     }
 }
+
+/* ================= Skill Gap Card Layout ================= */
+
+.card {
+    background: #ffffff;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* ================= Gap Table Styling ================= */
+
+.gap-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.gap-table thead {
+    background-color: #f4f6fa;
+}
+
+.gap-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.gap-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.gap-table tr:hover {
+    background-color: #fafafa;
+}
+
+/* ================= Gap Score Coloring ================= */
+
+.gap-positive {
+    color: #2e7d32;
+    font-weight: bold;
+}
+
+.gap-negative {
+    color: #c62828;
+    font-weight: bold;
+}
+
+.gap-neutral {
+    color: #555;
+    font-weight: bold;
+}
