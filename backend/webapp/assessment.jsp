@@ -14,6 +14,17 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 <body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1>Assessment</h1>
+            <ul class="nav-menu">
+                <li><a href="DashboardServlet">Dashboard</a></li>
+                <li><a href="SkillsServlet">Skills</a></li>
+                <li><a href="SkillGapServlet">Skill Gaps</a></li>
+                <li><a href="LogoutServlet" class="btn btn-logout">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
     <div class="container">
         <h1>Submit Assessment Result</h1>
         <%

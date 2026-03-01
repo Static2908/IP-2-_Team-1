@@ -12,9 +12,6 @@ import java.util.*;
 @WebServlet("/SkillGapServlet")
 public class SkillGapServlet extends HttpServlet {
 
-    // =======================
-    // GET: Fetch existing gap analyses
-    // =======================
     @Override
     protected void doGet(HttpServletRequest request,
             HttpServletResponse response)
@@ -30,135 +27,61 @@ public class SkillGapServlet extends HttpServlet {
 
         try (Connection con = DBConnection.getConnection()) {
 
+            // Fetch student_id and target job
             int studentId;
-
-            // Fetch student_id
+            String targetJob = null;
             try (PreparedStatement ps = con.prepareStatement(
-                    "SELECT student_id FROM students WHERE user_id = ?")) {
-
+                    "SELECT student_id, target_job FROM students WHERE user_id = ?")) {
                 ps.setInt(1, userId);
-
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         studentId = rs.getInt("student_id");
+                        targetJob = rs.getString("target_job");
                     } else {
                         throw new SQLException("Student record not found.");
                     }
                 }
             }
+            request.setAttribute("targetJob", targetJob);
 
-            // Fetch all gap records
-            String fetchSql = "SELECT g.skill_id, s.skill_name, g.current_level, " +
-                    "g.target_level, g.gap_score, g.analysis_date " +
+            // PHASE 3: Fetch full gap history from database only (DB-DRIVEN)
+            List<Map<String, Object>> gapHistory = new ArrayList<>();
+            String gapSql = "SELECT s.skill_name, g.current_level, g.target_level, " +
+                    "g.gap_score, g.analysis_date " +
                     "FROM skill_gap_analysis g " +
                     "JOIN skills s ON g.skill_id = s.skill_id " +
                     "WHERE g.student_id = ? " +
                     "ORDER BY g.analysis_date DESC";
 
-            List<Map<String, Object>> gapList = new ArrayList<>();
-
-            try (PreparedStatement ps2 = con.prepareStatement(fetchSql)) {
-                ps2.setInt(1, studentId);
-
-                try (ResultSet rs2 = ps2.executeQuery()) {
-                    while (rs2.next()) {
-                        Map<String, Object> map = new HashMap<>();
-                        map.put("skillId", rs2.getInt("skill_id"));
-                        map.put("skillName", rs2.getString("skill_name"));
-                        map.put("currentLevel", rs2.getInt("current_level"));
-                        map.put("targetLevel", rs2.getInt("target_level"));
-                        map.put("gapScore", rs2.getDouble("gap_score"));
-                        map.put("analysisDate", rs2.getTimestamp("analysis_date"));
-                        gapList.add(map);
+            try (PreparedStatement psGap = con.prepareStatement(gapSql)) {
+                psGap.setInt(1, studentId);
+                try (ResultSet rs = psGap.executeQuery()) {
+                    while (rs.next()) {
+                        Map<String, Object> row = new HashMap<>();
+                        row.put("skillName", rs.getString("skill_name"));
+                        row.put("currentLevel", rs.getInt("current_level"));
+                        row.put("targetLevel", rs.getInt("target_level"));
+                        row.put("gapScore", rs.getDouble("gap_score"));
+                        row.put("analysisDate", rs.getTimestamp("analysis_date"));
+                        gapHistory.add(row);
                     }
                 }
             }
+            request.setAttribute("gapHistory", gapHistory);
 
-            request.setAttribute("gapAnalysis", gapList);
-
-            // read the student's target job
-            String targetJob = null;
-            try (PreparedStatement psJob = con.prepareStatement(
-                    "SELECT target_job FROM students WHERE student_id = ?")) {
-                psJob.setInt(1, studentId);
-                try (ResultSet rsJob = psJob.executeQuery()) {
-                    if (rsJob.next()) {
-                        targetJob = rsJob.getString("target_job");
-                    }
-                }
-            }
-            request.setAttribute("targetJob", targetJob);
-
-            // simple rule-based job recommendations
-            List<String> jobRecs = new ArrayList<>();
-            if (targetJob != null && !targetJob.trim().isEmpty()) {
-                // build proficiency map
-                Map<String, Integer> profMap = new HashMap<>();
-                try (PreparedStatement psProf = con.prepareStatement(
-                        "SELECT s.skill_name, ss.proficiency_level " +
-                                "FROM student_skills ss " +
-                                "JOIN skills s ON ss.skill_id = s.skill_id " +
-                                "WHERE ss.student_id = ?")) {
-                    psProf.setInt(1, studentId);
-                    try (ResultSet rsProf = psProf.executeQuery()) {
-                        while (rsProf.next()) {
-                            profMap.put(rsProf.getString("skill_name").toLowerCase(),
-                                    rsProf.getInt("proficiency_level"));
-                        }
-                    }
-                }
-                List<String> required = new ArrayList<>();
-                String tj = targetJob.toLowerCase();
-                if (tj.contains("backend developer") || tj.contains("backend")) {
-                    required = Arrays.asList("java", "database design", "data structures");
-                } else if (tj.contains("frontend developer") || tj.contains("frontend")) {
-                    required = Arrays.asList("javascript", "html", "css");
-                } else if (tj.contains("data scientist")) {
-                    required = Arrays.asList("python", "machine learning", "statistics");
-                }
-                for (String skill : required) {
-                    int prof = profMap.getOrDefault(skill, 0);
-                    if (prof < 3) {
-                        jobRecs.add("For your target job as " + targetJob +
-                                ", consider improving your " + skill + " skills.");
-                    }
-                }
-            }
-            request.setAttribute("jobRecommendations", jobRecs);
-
-            // if an assessment was just completed, expose the last gap information
-            Integer lastSkillId = (Integer) session.getAttribute("lastSkillId");
-            Integer lastClaimed = (Integer) session.getAttribute("lastClaimedLevel");
-            Integer lastActual = (Integer) session.getAttribute("lastActualLevel");
-            if (lastSkillId != null && lastClaimed != null && lastActual != null) {
-                double lastGap = lastActual - lastClaimed;
-                String lastSkillName = null;
-                try (PreparedStatement psName = con.prepareStatement(
-                        "SELECT skill_name FROM skills WHERE skill_id = ?")) {
-                    psName.setInt(1, lastSkillId);
-                    try (ResultSet rsName = psName.executeQuery()) {
-                        if (rsName.next()) {
-                            lastSkillName = rsName.getString("skill_name");
-                        }
-                    }
-                }
-                request.setAttribute("lastSkillName", lastSkillName);
-                request.setAttribute("lastClaimedLevel", lastClaimed);
-                request.setAttribute("lastActualLevel", lastActual);
-                request.setAttribute("lastGapScore", lastGap);
-                // clear to avoid showing repeatedly
-                session.removeAttribute("lastSkillId");
-                session.removeAttribute("lastClaimedLevel");
-                session.removeAttribute("lastActualLevel");
-            }
+            // PHASE 6: Generate recommendations - placeholder until RecommendationEngine is
+            // integrated
+            List<String> recommendations = new ArrayList<>();
+            // TODO: Integrate RecommendationEngine for intelligent recommendations
+            request.setAttribute("recommendations", recommendations);
 
         } catch (SQLException e) {
             e.printStackTrace();
-            request.setAttribute("gapAnalysis", new ArrayList<>());
+            request.setAttribute("gapHistory", new ArrayList<>());
+            request.setAttribute("recommendations", new ArrayList<>());
         }
 
-        request.getRequestDispatcher("skillgap.jsp")
-                .forward(request, response);
+        request.getRequestDispatcher("skillgap.jsp").forward(request, response);
     }
 
     // =======================

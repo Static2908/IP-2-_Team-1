@@ -199,6 +199,35 @@ legend {
     .container {
         padding: 10px;
     }
+}
+
+/* Skills page enhancements */
+.skills-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.skills-table th,
+.skills-table td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+.skills-table th {
+    background-color: #f5f7fa;
+}
+
+.btn-sm {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+}
+
+.action-buttons {
+    text-align: right;
+    margin-bottom: 15px;
+}
+    }
 
     .proficiency-scale {
         flex-direction: column;

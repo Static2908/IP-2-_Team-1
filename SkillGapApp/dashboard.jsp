@@ -23,9 +23,9 @@
         <div class="nav-container">
             <h1>Dashboard</h1>
             <ul class="nav-menu">
-                <li><a href="#profile">Profile</a></li>
-                <li><a href="#skills">Skills</a></li>
-                <li><a href="#gaps">Skill Gaps</a></li>
+                <li><a href="DashboardServlet">Dashboard</a></li>
+                <li><a href="SkillsServlet">Skills</a></li>
+                <li><a href="SkillGapServlet">Skill Gaps</a></li>
                 <li><a href="LogoutServlet" class="btn btn-logout">Logout</a></li>
             </ul>
         </div>
@@ -66,7 +66,7 @@
 
         <div class="action-buttons">
             <a href="SkillsServlet" class="btn btn-primary">Manage Skills</a>
-            <a href="AssessmentServlet" class="btn btn-primary">Take Assessment</a>
+            <a href="SkillsServlet" class="btn btn-primary">Take Assessment</a>
             <a href="SkillGapServlet" class="btn btn-primary">View Skill Gap</a>
         </div>
 

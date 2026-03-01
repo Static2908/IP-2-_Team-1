@@ -40,7 +40,7 @@ public class SkillsServlet extends HttpServlet {
             }
 
             List<Map<String, Object>> skills = new ArrayList<>();
-            String sql = "SELECT ss.student_skill_id, s.skill_name, ss.proficiency_level " +
+            String sql = "SELECT s.skill_id, ss.student_skill_id, s.skill_name, ss.proficiency_level " +
                     "FROM student_skills ss " +
                     "JOIN skills s ON ss.skill_id = s.skill_id " +
                     "WHERE ss.student_id = ?";
@@ -49,6 +49,7 @@ public class SkillsServlet extends HttpServlet {
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
                         Map<String, Object> row = new HashMap<>();
+                        row.put("skillId", rs.getInt("skill_id"));
                         row.put("id", rs.getInt("student_skill_id"));
                         row.put("name", rs.getString("skill_name"));
                         row.put("level", rs.getInt("proficiency_level"));

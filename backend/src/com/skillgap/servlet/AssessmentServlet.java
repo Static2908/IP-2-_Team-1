@@ -278,10 +278,25 @@ public class AssessmentServlet extends HttpServlet {
                 }
                 // --- auto-sync student_skills end ---
 
-                // store last levels for gap page
-                session.setAttribute("lastSkillId", skillId);
-                session.setAttribute("lastClaimedLevel", claimedLevel);
-                session.setAttribute("lastActualLevel", profLevel);
+                // --- Insert gap analysis into database (DB-DRIVEN, NOT SESSION) ---
+                // Fetch claimed level (already have it from before UPDATE)
+                int claimedLevelForGap = claimedLevel; // from earlier query
+                double gapScore = profLevel - claimedLevelForGap;
+                String gapInsertSql = "INSERT INTO skill_gap_analysis " +
+                        "(analysis_id, student_id, skill_id, current_level, target_level, gap_score, analysis_date) " +
+                        "VALUES (seq_skill_gap_analysis.NEXTVAL, ?, ?, ?, ?, ?, SYSTIMESTAMP)";
+                try (PreparedStatement psGapIns = con.prepareStatement(gapInsertSql)) {
+                    psGapIns.setInt(1, studentId);
+                    psGapIns.setInt(2, skillId);
+                    psGapIns.setInt(3, claimedLevelForGap);
+                    psGapIns.setInt(4, profLevel);
+                    psGapIns.setDouble(5, gapScore);
+                    psGapIns.executeUpdate();
+                }
+                // --- gap analysis persistence end ---
+
+                // Remove session dependency - do NOT set session attributes
+                // SkillGapServlet will fetch all data from database on next page
 
                 con.commit();
 
