@@ -16,7 +16,8 @@ if (session.getAttribute("username") != null) {
 <body>
     <div class="login-container">
         <div class="login-form">
-            <h1>AI Skill Gap Analysis System</h1>
+            <h1>SkillBridge</h1>
+            <h2>AI Based Skill Gap Analysis System</h2>
             <%
                 String error = request.getParameter("error");
                 String success = request.getParameter("success");
