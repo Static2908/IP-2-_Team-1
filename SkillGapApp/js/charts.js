@@ -172,11 +172,55 @@ function initTargetRadarChart() {
 // Initialize Skill Gap Chart
 function initGapChart() {
     const ctx = document.getElementById('gapChart');
-    if (!ctx || !studentData || !studentData.skillGaps) return;
-    
-    const gapLabels = Object.keys(studentData.skillGaps);
-    const gapValues = Object.values(studentData.skillGaps).map(Number);
-    if (gapLabels.length === 0) return;
+    if (!ctx || !studentData) return;
+
+    const parent = ctx.parentElement;
+    const existingStatus = parent ? parent.querySelector('.gap-chart-status') : null;
+    if (existingStatus) {
+        existingStatus.remove();
+    }
+
+    if (studentData.gapAssessmentAttempted !== true) {
+        ctx.style.display = 'none';
+        if (parent) {
+            const status = document.createElement('div');
+            status.className = 'gap-chart-status';
+            status.style.margin = '1rem 0';
+            status.style.padding = '0.9rem 1rem';
+            status.style.border = '1px solid #f59e0b';
+            status.style.borderRadius = '8px';
+            status.style.background = '#fffbeb';
+            status.style.color = '#92400e';
+            status.style.fontWeight = '600';
+            status.style.textAlign = 'center';
+            status.textContent = 'Assessment not attempted yet. Complete at least one assessment to view skill gap chart.';
+            parent.appendChild(status);
+        }
+        return;
+    }
+
+    ctx.style.display = 'block';
+
+    const gapSource = studentData.skillGaps || {};
+    const gapLabels = Object.keys(gapSource);
+    const gapValues = Object.values(gapSource).map(Number);
+    if (gapLabels.length === 0) {
+        if (parent) {
+            const status = document.createElement('div');
+            status.className = 'gap-chart-status';
+            status.style.margin = '1rem 0';
+            status.style.padding = '0.9rem 1rem';
+            status.style.border = '1px solid #93c5fd';
+            status.style.borderRadius = '8px';
+            status.style.background = '#eff6ff';
+            status.style.color = '#1e3a8a';
+            status.style.fontWeight = '600';
+            status.style.textAlign = 'center';
+            status.textContent = 'No skill gap analysis records available yet.';
+            parent.appendChild(status);
+        }
+        return;
+    }
 
     const gapColors = gapValues.map((value) => {
         if (value > 0) return '#16a34a';
@@ -192,7 +236,10 @@ function initGapChart() {
                 label: 'Skill Gap Score',
                 data: gapValues,
                 backgroundColor: gapColors,
-                borderRadius: 5
+                borderColor: gapColors,
+                borderWidth: 1,
+                borderRadius: 5,
+                minBarLength: 4 // Ensures even a 0 gap is visible as a small sliver
             }]
         },
         options: {
@@ -201,8 +248,16 @@ function initGapChart() {
             indexAxis: 'y',
             scales: {
                 x: {
-                    beginAtZero: true,
-                    max: 5
+                    min: -5,
+                    max: 5,
+                    grid: {
+                        color: (context) => {
+                            if (context.tick.value === 0) {
+                                return '#333'; // Make the zero line bold and visible
+                            }
+                            return '#e5e7eb';
+                        }
+                    }
                 }
             },
             plugins: {

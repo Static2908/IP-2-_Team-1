@@ -95,16 +95,52 @@ public class DashboardServlet extends HttpServlet {
             // Assessment flow updates current proficiency separately.
             // ============================================================
             Map<String, Integer> targetMap = buildRoleExpectedLevels(targetJob, skillMap);
-            Map<String, Double> gapMap = new LinkedHashMap<>();
-            for (Map.Entry<String, Integer> entry : skillMap.entrySet()) {
-                String skill = entry.getKey();
-                int currentLevel = entry.getValue();
-                int expectedLevel = targetMap.getOrDefault(skill, currentLevel);
-                gapMap.put(skill, (double) (expectedLevel - currentLevel));
+
+            // Unified set of all skills to show consistently across all charts
+            Set<String> allSkills = new LinkedHashSet<>(skillMap.keySet());
+            allSkills.addAll(targetMap.keySet());
+
+            Map<String, Integer> finalSkillMap = new LinkedHashMap<>();
+            Map<String, Integer> finalTargetMap = new LinkedHashMap<>();
+            Map<String, Double> roleGapMap = new LinkedHashMap<>();
+
+            for (String skill : allSkills) {
+                int currentLevel = skillMap.getOrDefault(skill, 0);
+                // If it's missing from target map, default expected level to what they have, or
+                // 3 if they don't have it
+                int expectedLevel = targetMap.getOrDefault(skill, currentLevel == 0 ? 3 : currentLevel);
+
+                finalSkillMap.put(skill, currentLevel);
+                finalTargetMap.put(skill, expectedLevel);
+                // "Positive means above expected, Negative means below expected"
+                roleGapMap.put(skill, (double) (currentLevel - expectedLevel));
             }
 
-            request.setAttribute("targetMap", targetMap);
-            request.setAttribute("gapMap", gapMap);
+            request.setAttribute("targetMap", finalTargetMap);
+
+            // Keep the gap bar chart strictly in sync with persisted gap analysis records.
+            // We use the latest record per skill, same source-of-truth as SkillGapServlet.
+            Map<String, Double> latestGapMap = new LinkedHashMap<>();
+            String gapSql = "SELECT s.skill_name, g.gap_score, g.analysis_date " +
+                    "FROM skill_gap_analysis g " +
+                    "JOIN skills s ON g.skill_id = s.skill_id " +
+                    "JOIN student_skills ss ON ss.student_id = g.student_id AND ss.skill_id = g.skill_id " +
+                    "WHERE g.student_id = ? " +
+                    "ORDER BY g.analysis_date DESC";
+            try (PreparedStatement psGap = con.prepareStatement(gapSql)) {
+                psGap.setInt(1, studentId);
+                try (ResultSet rs = psGap.executeQuery()) {
+                    while (rs.next()) {
+                        String skillName = rs.getString("skill_name");
+                        if (!latestGapMap.containsKey(skillName)) {
+                            latestGapMap.put(skillName, rs.getDouble("gap_score"));
+                        }
+                    }
+                }
+            }
+            boolean gapAssessmentAttempted = !latestGapMap.isEmpty();
+            request.setAttribute("gapAssessmentAttempted", gapAssessmentAttempted);
+            request.setAttribute("gapMap", latestGapMap);
 
             // ============================================================
             // PHASE 4 & 6: PREPARE CONSISTENT JSON (IDENTICAL KEYS)
@@ -112,9 +148,9 @@ public class DashboardServlet extends HttpServlet {
             // All three JSON objects now have EXACT same keys, in order,
             // ensuring chart stability across refreshes
             // ============================================================
-            String skillJson = toJson(skillMap);
-            String targetJson = toJson(targetMap);
-            String gapJson = toJson(gapMap);
+            String skillJson = toJson(finalSkillMap);
+            String targetJson = toJson(finalTargetMap);
+            String gapJson = toJson(latestGapMap);
 
             request.setAttribute("skillJson", skillJson);
             request.setAttribute("targetJson", targetJson);

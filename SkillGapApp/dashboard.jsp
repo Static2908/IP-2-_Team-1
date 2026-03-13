@@ -45,6 +45,7 @@
             var __skillJson = '<%= request.getAttribute("skillJson") %>';
             var __targetJson = '<%= request.getAttribute("targetJson") %>';
             var __gapJson = '<%= request.getAttribute("gapJson") %>';
+            var __gapAssessmentAttempted = <%= Boolean.TRUE.equals(request.getAttribute("gapAssessmentAttempted")) %>;
             try { __skillJson = JSON.parse(__skillJson); } catch(e){ __skillJson = {}; }
             try { __targetJson = JSON.parse(__targetJson); } catch(e){ __targetJson = {}; }
             try { __gapJson = JSON.parse(__gapJson); } catch(e){ __gapJson = {}; }
@@ -53,7 +54,8 @@
                 name: "<%= username %>",
                 skills: __skillJson,
                 targetLevels: __targetJson,
-                skillGaps: __gapJson
+                skillGaps: __gapJson,
+                gapAssessmentAttempted: __gapAssessmentAttempted
             };
         </script>
         <section class="section dashboard-card skill-summary-card">
@@ -126,9 +128,9 @@
         (function applyGapChartColorOverride() {
             function getGapColor(value) {
                 const numericValue = Number(value);
-                if (numericValue > 0) return '#16a34a';
-                if (numericValue < 0) return '#dc2626';
-                return '#eab308';
+                if (numericValue > 0) return '#16a34a'; // Green (Surplus)
+                if (numericValue < 0) return '#dc2626'; // Red (Lacking)
+                return '#eab308'; // Yellow (Exact match)
             }
 
             function syncGapChartColors() {
@@ -148,6 +150,7 @@
 
                 const gapValues = Object.values(window.studentData.skillGaps).map(Number);
                 chart.data.datasets[0].backgroundColor = gapValues.map(getGapColor);
+                chart.data.datasets[0].borderColor = gapValues.map(getGapColor);
                 chart.update();
             }
 
