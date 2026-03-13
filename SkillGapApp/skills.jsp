@@ -1,7 +1,9 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Skills</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css" />
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/dashboard.css" />
@@ -21,7 +23,7 @@
     <div class="container">
         <h1>Your Skills</h1>
         <div class="action-buttons">
-            <a href="skillEntry.jsp" class="btn btn-primary">Add New Skill</a>
+            <a href="SkillEntryServlet" class="btn btn-primary">Add New Skill</a>
         </div>
         <a href="DashboardServlet" class="btn btn-secondary">Back to Dashboard</a>
         <%

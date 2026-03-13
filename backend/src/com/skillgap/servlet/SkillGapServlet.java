@@ -50,6 +50,7 @@ public class SkillGapServlet extends HttpServlet {
                     "g.gap_score, g.analysis_date " +
                     "FROM skill_gap_analysis g " +
                     "JOIN skills s ON g.skill_id = s.skill_id " +
+                    "JOIN student_skills ss ON ss.student_id = g.student_id AND ss.skill_id = g.skill_id " +
                     "WHERE g.student_id = ? " +
                     "ORDER BY g.analysis_date DESC";
 
@@ -78,8 +79,7 @@ public class SkillGapServlet extends HttpServlet {
                 }
             }
 
-            LinkedHashSet<String> jobRecSet = new LinkedHashSet<>();
-            LinkedHashSet<String> skillRecSet = new LinkedHashSet<>();
+            Map<String, com.skillgap.service.RecommendationEngine.SkillContext> skillContexts = new LinkedHashMap<>();
 
             for (Map<String, Object> row : latestGapPerSkill.values()) {
                 String skillName = (String) row.get("skillName");
@@ -87,24 +87,54 @@ public class SkillGapServlet extends HttpServlet {
                 int targetLvl = (int) row.get("targetLevel");
                 double gapScore = (double) row.get("gapScore");
 
-                Map<String, List<String>> recBundle = com.skillgap.service.RecommendationEngine
-                        .generateRecommendations(skillName, currentLvl, targetLvl, gapScore, targetJob);
-                List<String> jobRecs = recBundle.get("jobRecommendations");
-                List<String> skillRecs = recBundle.get("skillRecommendations");
-                if (jobRecs != null)
-                    jobRecSet.addAll(jobRecs);
-                if (skillRecs != null)
-                    skillRecSet.addAll(skillRecs);
+                skillContexts.put(
+                        skillName,
+                        new com.skillgap.service.RecommendationEngine.SkillContext(currentLvl, targetLvl, gapScore));
             }
 
-            request.setAttribute("jobRecommendations", new ArrayList<>(jobRecSet));
-            request.setAttribute("skillRecommendations", new ArrayList<>(skillRecSet));
+            Map<String, List<String>> groupedSkillRecommendations = com.skillgap.service.RecommendationEngine
+                    .generateRecommendations(skillContexts);
+
+            List<String> jobRecommendations = com.skillgap.service.RecommendationEngine
+                    .generateJobRecommendations(targetJob);
+
+            // Keep old list attribute for backward compatibility while adding grouped map.
+            List<String> skillRecommendationsFlat = new ArrayList<>();
+            for (List<String> recs : groupedSkillRecommendations.values()) {
+                skillRecommendationsFlat.addAll(recs);
+            }
+
+            // Compute average actual skill level for CMMI eligibility
+            double totalActualLevel = 0.0;
+            for (com.skillgap.service.RecommendationEngine.SkillContext ctx : skillContexts.values()) {
+                totalActualLevel += ctx.getActualLevel();
+            }
+            double avgActualLevel = skillContexts.isEmpty() ? 0.0 : totalActualLevel / skillContexts.size();
+            double roundedAvgLevel = Math.round(avgActualLevel * 10.0) / 10.0;
+
+            com.skillgap.service.RecommendationEngine.CMMIEligibility cmmiElig = com.skillgap.service.RecommendationEngine
+                    .generateCMMIEligibility(avgActualLevel);
+            Map<String, Object> cmmiInfo = new LinkedHashMap<>();
+            cmmiInfo.put("cmmiLevel", cmmiElig.cmmiLevel);
+            cmmiInfo.put("status", cmmiElig.status);
+            cmmiInfo.put("companies", cmmiElig.companies);
+            cmmiInfo.put("description", cmmiElig.description);
+            cmmiInfo.put("badgeColor", cmmiElig.badgeColor);
+
+            request.setAttribute("jobRecommendations", jobRecommendations);
+            request.setAttribute("skillRecommendationsMap", groupedSkillRecommendations);
+            request.setAttribute("skillRecommendations", skillRecommendationsFlat);
+            request.setAttribute("cmmiEligibility", cmmiInfo);
+            request.setAttribute("avgSkillLevel", roundedAvgLevel);
 
         } catch (SQLException e) {
             e.printStackTrace();
             request.setAttribute("gapHistory", new ArrayList<>());
             request.setAttribute("jobRecommendations", new ArrayList<>());
+            request.setAttribute("skillRecommendationsMap", new LinkedHashMap<>());
             request.setAttribute("skillRecommendations", new ArrayList<>());
+            request.setAttribute("cmmiEligibility", null);
+            request.setAttribute("avgSkillLevel", 0.0);
         }
 
         request.getRequestDispatcher("skillgap.jsp").forward(request, response);

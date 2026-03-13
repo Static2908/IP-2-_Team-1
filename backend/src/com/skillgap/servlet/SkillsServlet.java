@@ -85,11 +85,58 @@ public class SkillsServlet extends HttpServlet {
                 int skillRecId = Integer.parseInt(idStr);
                 try (Connection con = DBConnection.getConnection()) {
                     if ("delete".equals(action)) {
+                        con.setAutoCommit(false);
+
+                        int studentId;
                         try (PreparedStatement ps = con.prepareStatement(
-                                "DELETE FROM student_skills WHERE student_skill_id = ?")) {
-                            ps.setInt(1, skillRecId);
-                            ps.executeUpdate();
+                                "SELECT student_id FROM students WHERE user_id = ?")) {
+                            ps.setInt(1, userId);
+                            try (ResultSet rs = ps.executeQuery()) {
+                                if (rs.next()) {
+                                    studentId = rs.getInt("student_id");
+                                } else {
+                                    throw new SQLException("Student not found");
+                                }
+                            }
                         }
+
+                        Integer skillId = null;
+                        try (PreparedStatement psSel = con.prepareStatement(
+                                "SELECT skill_id FROM student_skills WHERE student_skill_id = ? AND student_id = ?")) {
+                            psSel.setInt(1, skillRecId);
+                            psSel.setInt(2, studentId);
+                            try (ResultSet rs = psSel.executeQuery()) {
+                                if (rs.next()) {
+                                    skillId = rs.getInt("skill_id");
+                                }
+                            }
+                        }
+
+                        if (skillId != null) {
+                            try (PreparedStatement psDelSkill = con.prepareStatement(
+                                    "DELETE FROM student_skills WHERE student_skill_id = ? AND student_id = ?")) {
+                                psDelSkill.setInt(1, skillRecId);
+                                psDelSkill.setInt(2, studentId);
+                                psDelSkill.executeUpdate();
+                            }
+
+                            // Remove stale gap history/recommendations for removed skills.
+                            try (PreparedStatement psDelGap = con.prepareStatement(
+                                    "DELETE FROM skill_gap_analysis WHERE student_id = ? AND skill_id = ?")) {
+                                psDelGap.setInt(1, studentId);
+                                psDelGap.setInt(2, skillId);
+                                psDelGap.executeUpdate();
+                            }
+
+                            try (PreparedStatement psDelRec = con.prepareStatement(
+                                    "DELETE FROM recommendations WHERE student_id = ? AND skill_id = ?")) {
+                                psDelRec.setInt(1, studentId);
+                                psDelRec.setInt(2, skillId);
+                                psDelRec.executeUpdate();
+                            }
+                        }
+
+                        con.commit();
                     }
                     // update action could be added later
                 } catch (SQLException e) {

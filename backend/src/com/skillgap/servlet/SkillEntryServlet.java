@@ -8,9 +8,38 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 import java.io.IOException;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @WebServlet("/SkillEntryServlet")
 public class SkillEntryServlet extends HttpServlet {
+
+    @Override
+    protected void doGet(HttpServletRequest request,
+            HttpServletResponse response)
+            throws ServletException, IOException {
+
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            response.sendRedirect("login.jsp");
+            return;
+        }
+
+        List<String> skillsList = new ArrayList<>();
+        try (Connection con = DBConnection.getConnection();
+                PreparedStatement ps = con.prepareStatement(
+                        "SELECT skill_name FROM skills ORDER BY skill_name");
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                skillsList.add(rs.getString("skill_name"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        request.setAttribute("skills", skillsList);
+        request.getRequestDispatcher("skillEntry.jsp").forward(request, response);
+    }
 
     @Override
     protected void doPost(HttpServletRequest request,
@@ -29,7 +58,7 @@ public class SkillEntryServlet extends HttpServlet {
         String expStr = request.getParameter("experience");
 
         if (skillName == null || skillName.trim().isEmpty()) {
-            response.sendRedirect("skillEntry.jsp?error=Skill name is required");
+            response.sendRedirect("SkillEntryServlet?error=Please+select+a+skill");
             return;
         }
 
@@ -39,12 +68,12 @@ public class SkillEntryServlet extends HttpServlet {
             int userId = (int) session.getAttribute("userId");
 
             if (!InputValidator.isValidProficiencyLevel(proficiencyLevel)) {
-                response.sendRedirect("skillEntry.jsp?error=Invalid proficiency level");
+                response.sendRedirect("SkillEntryServlet?error=Invalid+proficiency+level");
                 return;
             }
 
             if (experience < 0) {
-                response.sendRedirect("skillEntry.jsp?error=Experience cannot be negative");
+                response.sendRedirect("SkillEntryServlet?error=Experience+cannot+be+negative");
                 return;
             }
 
@@ -75,22 +104,9 @@ public class SkillEntryServlet extends HttpServlet {
                         if (rs.next()) {
                             skillId = rs.getInt("skill_id");
                         } else {
-                            String insertSkill = "INSERT INTO skills (skill_id, skill_name) VALUES (seq_skills.NEXTVAL, ?)";
-                            try (PreparedStatement psIns = con.prepareStatement(insertSkill)) {
-                                psIns.setString(1, skillName);
-                                psIns.executeUpdate();
-                            }
-                            // fetch currval for skill_id
-                            try (PreparedStatement psCurr = con
-                                    .prepareStatement("SELECT seq_skills.CURRVAL FROM dual")) {
-                                try (ResultSet rs2 = psCurr.executeQuery()) {
-                                    if (rs2.next()) {
-                                        skillId = rs2.getInt(1);
-                                    } else {
-                                        throw new SQLException("Failed to obtain skill_id CURRVAL");
-                                    }
-                                }
-                            }
+                            con.rollback();
+                            response.sendRedirect("SkillEntryServlet?error=Invalid+skill+selected");
+                            return;
                         }
                     }
                 }
@@ -106,7 +122,7 @@ public class SkillEntryServlet extends HttpServlet {
                 }
 
                 con.commit();
-                response.sendRedirect("skillEntry.jsp?success=Skill added successfully");
+                response.sendRedirect("SkillEntryServlet?success=Skill+added+successfully");
                 return;
             } catch (SQLException sqle) {
                 sqle.printStackTrace();
@@ -117,7 +133,7 @@ public class SkillEntryServlet extends HttpServlet {
                         ex.printStackTrace();
                     }
                 }
-                response.sendRedirect("skillEntry.jsp?error=Database error occurred");
+                response.sendRedirect("SkillEntryServlet?error=Database+error+occurred");
                 return;
             } finally {
                 if (con != null) {
@@ -129,7 +145,7 @@ public class SkillEntryServlet extends HttpServlet {
             }
 
         } catch (NumberFormatException e) {
-            response.sendRedirect("skillEntry.jsp?error=Invalid input format");
+            response.sendRedirect("SkillEntryServlet?error=Invalid+input+format");
         }
     }
 }

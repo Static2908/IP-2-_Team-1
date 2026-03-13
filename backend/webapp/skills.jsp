@@ -23,7 +23,7 @@
     <div class="container">
         <h1>Your Skills</h1>
         <div class="action-buttons">
-            <a href="skillEntry.jsp" class="btn btn-primary">Add New Skill</a>
+            <a href="SkillEntryServlet" class="btn btn-primary">Add New Skill</a>
         </div>
         <a href="DashboardServlet" class="btn btn-secondary">Back to Dashboard</a>
         <%

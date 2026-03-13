@@ -88,50 +88,19 @@ public class DashboardServlet extends HttpServlet {
             request.setAttribute("skillMap", skillMap);
 
             // ============================================================
-            // PHASE 1 & 4: Load most recent gap/target levels (TIMESTAMP-BASED)
+            // Build role-based expected levels for dashboard comparison
             // ============================================================
-            // REPLACED: (g.skill_id, g.analysis_id) IN (SELECT...)
-            // WITH: g.analysis_date = (SELECT MAX(g2.analysis_date) ...)
-            // This is more stable and deterministic than MAX(analysis_id)
+            // The dashboard should compare current skill levels against
+            // target-role expectations, not against assessment results.
+            // Assessment flow updates current proficiency separately.
             // ============================================================
-            Map<String, Integer> targetMap = new LinkedHashMap<>();
+            Map<String, Integer> targetMap = buildRoleExpectedLevels(targetJob, skillMap);
             Map<String, Double> gapMap = new LinkedHashMap<>();
-            try (PreparedStatement psGap = con.prepareStatement(
-                    "SELECT s.skill_name, g.current_level, g.target_level, g.gap_score " +
-                            "FROM skill_gap_analysis g " +
-                            "JOIN skills s ON g.skill_id = s.skill_id " +
-                            "WHERE g.student_id = ? " +
-                            "AND g.analysis_date = (" +
-                            "    SELECT MAX(g2.analysis_date) " +
-                            "    FROM skill_gap_analysis g2 " +
-                            "    WHERE g2.student_id = g.student_id " +
-                            "    AND g2.skill_id = g.skill_id" +
-                            ")")) {
-                psGap.setInt(1, studentId);
-                try (ResultSet rs = psGap.executeQuery()) {
-                    while (rs.next()) {
-                        String name = rs.getString("skill_name");
-                        targetMap.put(name, rs.getInt("target_level"));
-                        gapMap.put(name, rs.getDouble("gap_score"));
-                    }
-                }
-            }
-
-            // ============================================================
-            // PHASE 2: NORMALIZE GAP MAP - Fill missing skills with defaults
-            // ============================================================
-            // Ensures that ALL skills in skillMap have entries in targetMap
-            // and gapMap, preventing chart "blank slot" issues on refresh
-            // ============================================================
-            for (String skill : skillMap.keySet()) {
-                // If skill has no gap analysis, gap score defaults to 0.0
-                if (!gapMap.containsKey(skill)) {
-                    gapMap.put(skill, 0.0);
-                }
-                // If skill has no target, target defaults to current proficiency
-                if (!targetMap.containsKey(skill)) {
-                    targetMap.put(skill, skillMap.get(skill));
-                }
+            for (Map.Entry<String, Integer> entry : skillMap.entrySet()) {
+                String skill = entry.getKey();
+                int currentLevel = entry.getValue();
+                int expectedLevel = targetMap.getOrDefault(skill, currentLevel);
+                gapMap.put(skill, (double) (expectedLevel - currentLevel));
             }
 
             request.setAttribute("targetMap", targetMap);
@@ -189,5 +158,83 @@ public class DashboardServlet extends HttpServlet {
 
     private String escapeJson(String s) {
         return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    private Map<String, Integer> buildRoleExpectedLevels(String targetJob, Map<String, Integer> skillMap) {
+        Map<String, Integer> roleTargets = new LinkedHashMap<>();
+
+        String role = targetJob == null ? "" : targetJob.toLowerCase(Locale.ROOT);
+
+        if (role.contains("backend") || role.contains("server")) {
+            roleTargets.put("Java", 4);
+            roleTargets.put("Database Design", 4);
+            roleTargets.put("Data Structures", 4);
+            roleTargets.put("System Design", 3);
+            roleTargets.put("Cloud Computing", 3);
+            roleTargets.put("Python", 2);
+            roleTargets.put("Web Development", 2);
+            roleTargets.put("Machine Learning", 1);
+        } else if (role.contains("full stack") || role.contains("fullstack")) {
+            roleTargets.put("Java", 4);
+            roleTargets.put("Web Development", 4);
+            roleTargets.put("Database Design", 4);
+            roleTargets.put("Data Structures", 4);
+            roleTargets.put("System Design", 3);
+            roleTargets.put("Cloud Computing", 3);
+            roleTargets.put("Python", 2);
+            roleTargets.put("Machine Learning", 1);
+        } else if (role.contains("frontend") || role.contains("front end")) {
+            roleTargets.put("Web Development", 5);
+            roleTargets.put("Java", 2);
+            roleTargets.put("Python", 1);
+            roleTargets.put("Database Design", 2);
+            roleTargets.put("Data Structures", 3);
+            roleTargets.put("System Design", 2);
+            roleTargets.put("Cloud Computing", 1);
+            roleTargets.put("Machine Learning", 1);
+        } else if (role.contains("machine learning") || role.contains("ml") || role.contains("ai")) {
+            roleTargets.put("Machine Learning", 5);
+            roleTargets.put("Python", 4);
+            roleTargets.put("Data Structures", 4);
+            roleTargets.put("Cloud Computing", 3);
+            roleTargets.put("System Design", 3);
+            roleTargets.put("Database Design", 2);
+            roleTargets.put("Java", 2);
+            roleTargets.put("Web Development", 1);
+        } else if ((role.contains("data") && role.contains("scientist")) || role.contains("analyst")) {
+            roleTargets.put("Python", 4);
+            roleTargets.put("Machine Learning", 4);
+            roleTargets.put("Data Structures", 4);
+            roleTargets.put("Database Design", 3);
+            roleTargets.put("Cloud Computing", 2);
+            roleTargets.put("System Design", 2);
+            roleTargets.put("Java", 1);
+            roleTargets.put("Web Development", 1);
+        } else if (role.contains("cloud") || role.contains("devops")) {
+            roleTargets.put("Cloud Computing", 5);
+            roleTargets.put("System Design", 4);
+            roleTargets.put("Java", 3);
+            roleTargets.put("Python", 3);
+            roleTargets.put("Database Design", 3);
+            roleTargets.put("Data Structures", 2);
+            roleTargets.put("Web Development", 1);
+            roleTargets.put("Machine Learning", 1);
+        } else {
+            roleTargets.put("Java", 3);
+            roleTargets.put("Python", 3);
+            roleTargets.put("Data Structures", 4);
+            roleTargets.put("Database Design", 3);
+            roleTargets.put("System Design", 3);
+            roleTargets.put("Cloud Computing", 2);
+            roleTargets.put("Web Development", 2);
+            roleTargets.put("Machine Learning", 1);
+        }
+
+        Map<String, Integer> normalizedTargets = new LinkedHashMap<>();
+        for (Map.Entry<String, Integer> entry : skillMap.entrySet()) {
+            normalizedTargets.put(entry.getKey(), roleTargets.getOrDefault(entry.getKey(), entry.getValue()));
+        }
+
+        return normalizedTargets;
     }
 }

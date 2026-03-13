@@ -59,22 +59,13 @@
                     <input type="number" id="semester" name="semester" min="1" max="8" required>
                 </div>
                 <div class="form-group">
-    <label for="cgpa">CGPA (0 - 10):</label>
-    <input type="number"
-           id="cgpa"
-           name="cgpa"
-           step="0.01"
-           min="0"
-           max="10"
-           required>
-</div>
-<div class="form-group">
-    <label for="targetJob">Target Job:</label>
-    <input type="text"
-           id="targetJob"
-           name="targetJob"
-           required>
-</div>
+                    <label for="cgpa">CGPA:</label>
+                    <input type="number" id="cgpa" name="cgpa" min="0" max="10" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="targetJob">Target Role:</label>
+                    <input type="text" id="targetJob" name="targetJob" class="form-control" required>
+                </div>
             </fieldset>
 
             <button type="submit" class="btn btn-success">Register</button>

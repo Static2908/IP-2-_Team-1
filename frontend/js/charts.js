@@ -45,7 +45,7 @@ function initSkillsChart() {
         data: {
             labels: skillLabels,
             datasets: [{
-                label: 'Your Proficiency Levels',
+                label: 'Your Current Skill Levels',
                 data: skillValues,
                 borderColor: '#667eea',
                 backgroundColor: 'rgba(102, 126, 234, 0.2)',
@@ -89,6 +89,13 @@ function initGapChart() {
     const gapLabels = Object.keys(studentData.skillGaps);
     const gapValues = Object.values(studentData.skillGaps);
     
+    const gapColors = gapValues.map((value) => {
+        const numericValue = Number(value);
+        if (numericValue > 0) return '#16a34a';
+        if (numericValue < 0) return '#dc2626';
+        return '#eab308';
+    });
+
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -96,12 +103,7 @@ function initGapChart() {
             datasets: [{
                 label: 'Skill Gap Score',
                 data: gapValues,
-                backgroundColor: [
-                    '#f56565',
-                    '#ed8936',
-                    '#ecc94b',
-                    '#48bb78'
-                ],
+                backgroundColor: gapColors,
                 borderRadius: 5
             }]
         },

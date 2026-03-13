@@ -84,35 +84,34 @@ public class AssessmentServlet extends HttpServlet {
                 }
             }
 
-            // fetch random questions within difficulty range
+            // fetch random questions within preferred difficulty range first,
+            // then widen range if pool is smaller than expected.
             List<Map<String, Object>> questions = new ArrayList<>();
-            String qSql = "SELECT question_id, question_text, option_a, option_b, option_c, option_d " +
-                    "FROM (SELECT * FROM questions WHERE skill_id = ? " +
-                    "AND difficulty_level BETWEEN ? AND ? ORDER BY DBMS_RANDOM.VALUE) " +
-                    "WHERE ROWNUM <= ?";
-            try (PreparedStatement psQ = con.prepareStatement(qSql)) {
-                psQ.setInt(1, skillId);
-                psQ.setInt(2, minDifficulty);
-                psQ.setInt(3, maxDifficulty);
-                psQ.setInt(4, totalQuestions);
-                try (ResultSet rs = psQ.executeQuery()) {
-                    while (rs.next()) {
-                        Map<String, Object> q = new HashMap<>();
-                        q.put("questionId", rs.getInt("question_id"));
-                        q.put("questionText", rs.getString("question_text"));
-                        q.put("optionA", rs.getString("option_a"));
-                        q.put("optionB", rs.getString("option_b"));
-                        q.put("optionC", rs.getString("option_c"));
-                        q.put("optionD", rs.getString("option_d"));
-                        questions.add(q);
-                    }
-                }
+            Set<Integer> selectedQuestionIds = new HashSet<>();
+
+            questions.addAll(fetchRandomQuestions(
+                    con,
+                    skillId,
+                    minDifficulty,
+                    maxDifficulty,
+                    totalQuestions,
+                    selectedQuestionIds));
+
+            if (questions.size() < totalQuestions) {
+                int remaining = totalQuestions - questions.size();
+                questions.addAll(fetchRandomQuestions(
+                        con,
+                        skillId,
+                        1,
+                        5,
+                        remaining,
+                        selectedQuestionIds));
             }
 
             request.setAttribute("questions", questions);
             request.setAttribute("skillId", skillId);
             request.setAttribute("assessmentId", assessmentId);
-            request.setAttribute("totalQuestions", totalQuestions);
+            request.setAttribute("totalQuestions", questions.size());
 
             request.getRequestDispatcher("assessment.jsp").forward(request, response);
             return;
@@ -311,5 +310,67 @@ public class AssessmentServlet extends HttpServlet {
         } catch (NumberFormatException e) {
             response.sendRedirect("assessment.jsp?error=Invalid input format");
         }
+    }
+
+    private List<Map<String, Object>> fetchRandomQuestions(
+            Connection con,
+            int skillId,
+            int minDifficulty,
+            int maxDifficulty,
+            int limit,
+            Set<Integer> excludedIds) throws SQLException {
+
+        List<Map<String, Object>> questions = new ArrayList<>();
+        if (limit <= 0) {
+            return questions;
+        }
+
+        StringBuilder qSql = new StringBuilder(
+                "SELECT question_id, question_text, option_a, option_b, option_c, option_d " +
+                        "FROM (SELECT question_id, question_text, option_a, option_b, option_c, option_d " +
+                        "FROM questions WHERE skill_id = ? AND difficulty_level BETWEEN ? AND ?");
+
+        if (excludedIds != null && !excludedIds.isEmpty()) {
+            qSql.append(" AND question_id NOT IN (");
+            qSql.append(String.join(",", Collections.nCopies(excludedIds.size(), "?")));
+            qSql.append(")");
+        }
+
+        qSql.append(" ORDER BY DBMS_RANDOM.VALUE) WHERE ROWNUM <= ?");
+
+        try (PreparedStatement psQ = con.prepareStatement(qSql.toString())) {
+            int idx = 1;
+            psQ.setInt(idx++, skillId);
+            psQ.setInt(idx++, minDifficulty);
+            psQ.setInt(idx++, maxDifficulty);
+
+            if (excludedIds != null && !excludedIds.isEmpty()) {
+                for (Integer excludedId : excludedIds) {
+                    psQ.setInt(idx++, excludedId);
+                }
+            }
+
+            psQ.setInt(idx, limit);
+
+            try (ResultSet rs = psQ.executeQuery()) {
+                while (rs.next()) {
+                    int questionId = rs.getInt("question_id");
+                    if (excludedIds != null && !excludedIds.add(questionId)) {
+                        continue;
+                    }
+
+                    Map<String, Object> q = new HashMap<>();
+                    q.put("questionId", questionId);
+                    q.put("questionText", rs.getString("question_text"));
+                    q.put("optionA", rs.getString("option_a"));
+                    q.put("optionB", rs.getString("option_b"));
+                    q.put("optionC", rs.getString("option_c"));
+                    q.put("optionD", rs.getString("option_d"));
+                    questions.add(q);
+                }
+            }
+        }
+
+        return questions;
     }
 }

@@ -12,8 +12,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Submit Assessment</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/dashboard.css">
 </head>
 <body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1>Assessment</h1>
+            <ul class="nav-menu">
+                <li><a href="DashboardServlet">Dashboard</a></li>
+                <li><a href="SkillsServlet">Skills</a></li>
+                <li><a href="SkillGapServlet">Skill Gaps</a></li>
+                <li><a href="LogoutServlet" class="btn btn-logout">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
     <div class="container">
         <h1>Submit Assessment Result</h1>
         <%
@@ -46,12 +58,19 @@
                 %>
                 <div class="question-block">
                     <h3>Question <%= qnum++ %></h3>
-                    <p><%= q.get("questionText") %></p>
+                    <%
+                        String qText = q.get("questionText") != null ? q.get("questionText").toString().replace("<", "&lt;").replace(">", "&gt;") : "";
+                        String optA = q.get("optionA") != null ? q.get("optionA").toString().replace("<", "&lt;").replace(">", "&gt;") : "";
+                        String optB = q.get("optionB") != null ? q.get("optionB").toString().replace("<", "&lt;").replace(">", "&gt;") : "";
+                        String optC = q.get("optionC") != null ? q.get("optionC").toString().replace("<", "&lt;").replace(">", "&gt;") : "";
+                        String optD = q.get("optionD") != null ? q.get("optionD").toString().replace("<", "&lt;").replace(">", "&gt;") : "";
+                    %>
+                    <p><%= qText %></p>
                     <input type="hidden" name="questionIds" value="<%= qid %>" />
-                    <label><input type="radio" name="ans_<%= qid %>" value="A" required> <%= q.get("optionA") %></label><br>
-                    <label><input type="radio" name="ans_<%= qid %>" value="B"> <%= q.get("optionB") %></label><br>
-                    <label><input type="radio" name="ans_<%= qid %>" value="C"> <%= q.get("optionC") %></label><br>
-                    <label><input type="radio" name="ans_<%= qid %>" value="D"> <%= q.get("optionD") %></label><br>
+                    <label><input type="radio" name="ans_<%= qid %>" value="A" required> <%= optA %></label><br>
+                    <label><input type="radio" name="ans_<%= qid %>" value="B"> <%= optB %></label><br>
+                    <label><input type="radio" name="ans_<%= qid %>" value="C"> <%= optC %></label><br>
+                    <label><input type="radio" name="ans_<%= qid %>" value="D"> <%= optD %></label><br>
                 </div>
                 <%      }
                     } else {
